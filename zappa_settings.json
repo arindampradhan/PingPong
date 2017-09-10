@@ -1,0 +1,8 @@
+{
+    "dev": {
+        "app_function": "pingpong.app",
+        "aws_region": "us-east-1",
+        "profile_name": "default",
+        "s3_bucket": "zappa-tqlo47gjb"
+    }
+}
