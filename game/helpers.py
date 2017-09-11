@@ -3,6 +3,10 @@ import pandas
 import csv
 import json
 from functools import wraps
+from flask import make_response, jsonify
+
+def bad_request(d):
+    return make_response(jsonify(d), 400)
 
 
 def CustomParser(data):

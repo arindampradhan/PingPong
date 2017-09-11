@@ -7,7 +7,7 @@ import os
 import uuid
 import shutil
 
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request, make_response
 import pandas
 
 app = Flask(__name__)
@@ -19,6 +19,12 @@ def index():
 
 @app.route('/api/start', methods=['POST'])
 def start_match():
+	"""
+	Start the match
+	or
+	Restart the match | clear all db
+	:return: json
+	"""
 	restart= request.args.get('restart')
 	if restart:
 		db.tinydb.purge_tables()
@@ -32,16 +38,23 @@ def start_match():
 @app.route('/api/player/', methods=['GET'])
 @validate_match
 def player_info():
+	"""
+	Get all available players from csv sheet
+	:return: json
+	"""
 	if request.method == 'GET':
 		j = csv_to_json(DATA_FILE)
 		return jsonify({'players': j})
 	else:
 		return jsonify({'error': 'method not allowed!'})
 
-
 @app.route('/api/player/online', methods=['POST'])
 @validate_match
 def add_player_info():
+	"""
+	add player information to make them online
+	:return: json
+	"""
 	try:
 		form_data = request.get_json()
 		print(form_data)
@@ -58,6 +71,10 @@ def add_player_info():
 @app.route('/api/player/online', methods=['GET'])
 @validate_match
 def get_player_info():
+	"""
+	get information of players who are online
+	:return: json
+	"""
 	try:
 		u = list(db.users.find())
 		return jsonify({"result": u})
@@ -163,11 +180,16 @@ def get_matches(match_round):
 	return jsonify(get_matches_by_round(match_round))
 
 @app.route('/api/match/winner', methods=['GET'])
-@validate_match
-@all_players_loggedin
+# @validate_match
 def get_winner():
+	"""
+	Get winnner by passing 2 players
+	:return:
+	"""
 	player1 = request.args.get('player1')
 	player2 = request.args.get('player2')
+	if not player2 or not player1:
+		return jsonify({'error': "add player1 and player2 in args"})
 
 	players_data = pandas.read_csv(DATA_FILE)
 	winner = find_winner(player1, player2, players_data)
