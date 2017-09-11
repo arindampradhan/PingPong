@@ -27,7 +27,7 @@ def add_user(request):
 
     # get data
     form_data = request.get_json()
-    username = form_data.get('username').lower()
+    username = form_data.get('username')
     player_type = form_data.get('type').lower()
     # check form data present
     if not username:
@@ -114,25 +114,22 @@ def all_players_loggedin(f):
 
 
 def get_matches_by_round(match_round):
-	"""Get matches and their winners"""
-	try:
-		if match_round > 3:
-			return {'error': 'round cannot be greater than 3'}
-		matches = db.games.find_one({"round": match_round})
-		if not matches:
-			return {'error': 'Round not yet started by the refree!'}
-		players_data = pandas.read_csv(DATA_FILE)
-		# winner
-		winners = []
-		for match in matches['matches']:
-			player1 = match['player1']
-			player2 = match['player2']
-			winner = find_winner(player1, player2, players_data)
-			message = '{} vs {}'.format(player1, player2)
-			winners.append({'winner':winner, 'message':message})
-		return {'data': matches, 'winners': winners}
-	except Exception as e:
-		return {'error': str(e)}
+    """Get matches and their winners"""
+    if match_round > 3:
+        return {'error': 'round cannot be greater than 3'}
+    matches = db.games.find_one({"round": match_round})
+    if not matches:
+        return {'error': 'Round not yet started by the refree!'}
+    players_data = pandas.read_csv(DATA_FILE)
+    # winner
+    winners = []
+    for match in matches['matches']:
+        player1 = match['player1'].title()
+        player2 = match['player2'].title()
+        winner = find_winner(player1, player2, players_data)
+        message = '{} vs {}'.format(player1, player2)
+        winners.append({'winner':winner, 'message':message})
+    return {'data': matches, 'winners': winners}
 
 
 def get_players_status(username):

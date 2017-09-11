@@ -74,6 +74,8 @@ def get_players(username):
 # refree apis
 ######################
 @app.route('/api/refree/game', methods=['POST'])
+@validate_match
+@all_players_loggedin
 def create_match():
 	"""
 	Create a match
@@ -99,11 +101,11 @@ def create_match():
 	all_players_db = set()
 
 	for u in users_available:
-		all_players_db.add(u['Player Name'])
+		all_players_db.add(u['Player Name'].lower())
 
 	for match in post_data['matches']:
-		player1 = match['player1']
-		player2 = match['player2']
+		player1 = match['player1'].lower()
+		player2 = match['player2'].lower()
 		all_players.add(player2)
 		all_players.add(player1)
 		if not player1 or not player2:
@@ -164,11 +166,13 @@ def get_matches(match_round):
 @validate_match
 @all_players_loggedin
 def get_winner():
-	player1 = request.args.get('player1') or 'Chandler'
-	player2 = request.args.get('player2') or 'Colwin'
+	player1 = request.args.get('player1')
+	player2 = request.args.get('player2')
+
 	players_data = pandas.read_csv(DATA_FILE)
 	winner = find_winner(player1, player2, players_data)
 	return jsonify({'winner': winner})
+
 
 if __name__=='__main__':
 	app.run(debug=True)
