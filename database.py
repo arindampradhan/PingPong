@@ -9,6 +9,7 @@ connection = TinyMongoClient(DB_PATH)
 db = connection[DBNAME]
 users_collection = db.users
 matches_collection = db.matches
+games_collection = db.games
 
 def add_refree(form_data):
     started = db.match_start.find({'start': True})
@@ -38,7 +39,7 @@ def add_user(request):
     users_available = csv_to_json(DATA_FILE)
     exists = False
     for u in users_available:
-        if u.get('Player Name') == username:
+        if u.get('Player Name').lower() == username.lower():
             exists = True
     if not exists:
         return {'error': 'username is not available for match'}
@@ -78,10 +79,9 @@ def save_match_to_db(request):
         return {'error': str(e)}
 
 
-def get_player_matches(get_matches):
-    matches = matches_collection.find({'round':1})
+def get_player_matches(match_round):
+    matches = matches_collection.find({'round': match_round})
     return list(matches)
-
 
 
 def validate_match(f):
@@ -89,6 +89,18 @@ def validate_match(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         started = db.match_start.find({'start': True})
+        if not dict(started):
+            return jsonify({"error": 'match not started yet!'})
+        return f(*args, **kwargs)
+    return decorated_function
+
+def all_players_loggedin(f):
+    """Validate apis for different cases."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        db_all_users = list(db.users.find({}))
+        users_available = csv_to_json(DATA_FILE)
+
         if not dict(started):
             return jsonify({"error": 'match not started yet!'})
         return f(*args, **kwargs)
