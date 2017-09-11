@@ -55,12 +55,20 @@ def add_player_info():
 	except:
 		return jsonify({'error': 'username and type not passed'})
 
-
 @app.route('/api/player/online', methods=['GET'])
 @validate_match
-def get_players():
-	users = db.users.find({})
-	return jsonify({'users': list(users)})
+def get_player_info():
+	try:
+		u = list(db.users.find())
+		return jsonify({"result": u})
+	except Exception as e:
+		return jsonify({'error': str(e)})
+
+
+@app.route('/api/player/status/<string:username>', methods=['GET'])
+@validate_match
+def get_players(username):
+	return jsonify(get_players_status(username))
 
 ######################
 # refree apis
@@ -145,13 +153,16 @@ def create_match():
 ######################
 # matches apis
 ######################
-@app.route('/api/matches/<match_round>')
+@app.route('/api/matches/<int:match_round>')
+@validate_match
+@all_players_loggedin
 def get_matches(match_round):
 	"""Get matches and their winners"""
-	matches = list(db.games.find({}))
-	return jsonify({'data': matches})
+	return jsonify(get_matches_by_round(match_round))
 
 @app.route('/api/match/winner', methods=['GET'])
+@validate_match
+@all_players_loggedin
 def get_winner():
 	player1 = request.args.get('player1') or 'Chandler'
 	player2 = request.args.get('player2') or 'Colwin'

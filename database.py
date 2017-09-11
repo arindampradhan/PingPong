@@ -3,6 +3,8 @@ from flask import session, jsonify
 from functools import wraps
 from game.helpers import csv_to_json
 from config import *
+import pandas
+from game.determine_winner import find_winner
 
 # /tmp is accessible in lambda
 connection = TinyMongoClient(DB_PATH)
@@ -100,8 +102,64 @@ def all_players_loggedin(f):
     def decorated_function(*args, **kwargs):
         db_all_users = list(db.users.find({}))
         users_available = csv_to_json(DATA_FILE)
+        print(users_available)
+        # get player names
+        u1 = set([usr['Player Name'].lower() for usr in users_available])
+        u2 = set([usr['username'].lower() for usr in db_all_users])
+        if u1 != u2:
+            return jsonify({"error": "all users are not online!", "active":list(u2), "all": list(u1)})
 
-        if not dict(started):
-            return jsonify({"error": 'match not started yet!'})
         return f(*args, **kwargs)
     return decorated_function
+
+
+def get_matches_by_round(match_round):
+	"""Get matches and their winners"""
+	try:
+		if match_round > 3:
+			return {'error': 'round cannot be greater than 3'}
+		matches = db.games.find_one({"round": match_round})
+		if not matches:
+			return {'error': 'Round not yet started by the refree!'}
+		players_data = pandas.read_csv(DATA_FILE)
+		# winner
+		winners = []
+		for match in matches['matches']:
+			player1 = match['player1']
+			player2 = match['player2']
+			winner = find_winner(player1, player2, players_data)
+			message = '{} vs {}'.format(player1, player2)
+			winners.append({'winner':winner, 'message':message})
+		return {'data': matches, 'winners': winners}
+	except Exception as e:
+		return {'error': str(e)}
+
+
+def get_players_status(username):
+    """Get status of the matches by player names"""
+    try:
+        games = db.games.find({})
+        statuses = []
+        players_data = pandas.read_csv(DATA_FILE)
+
+        for game in games:
+            for match in game['matches']:
+                player1 = match['player1']
+                player2 = match['player2']
+                winner = find_winner(player1, player2, players_data)
+                stat = None
+                if winner == username:
+                    stat = 'won'
+                else:
+                    stat = 'lose'
+                if username == player2 or username == player1:
+                    status = {
+                        'match': '{} vs {}'.format(player1,player2),
+                        'status': stat
+                    }
+                    statuses.append(status)
+
+        return {'status': statuses}
+    except Exception as e:
+        return {'error': str(e)}
+
