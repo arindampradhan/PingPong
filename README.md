@@ -10,6 +10,16 @@
 * Cost on number of requests
 
 
+## About
+
+* framework - `flask`
+* deployment `framework - zappa`
+* hosting - `aws lambda`
+* documentation - `postman`
+* database - `tinydb / tinymongo`
+* uses `/tmp` which lambda provides for storing data
+
+
 ## Requirements
 
 * python 3.6
